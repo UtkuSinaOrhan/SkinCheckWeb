@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Check - Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <select id="language-select">
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+        </select>
+        <button id="toggle-dark-mode" class="btn">🌓</button>
+    </div>
+
+    <!-- Logo and Brand -->
+    <div class="brand">
+        <div class="logo">
+            <img src="assets/logo.png" alt="Skin Check Logo">
+        </div>
+        <a href="home.html">
+            <h1>SkinCheck</h1>
+        </a>
+    </div>
+
+    <!-- Buttons -->
+    <div class="container">
+        <button id="skin-analysis" class="btn">Skin Analysis</button>
+        <button id="promote-product" class="btn">Promote Your Product</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBe6Gj3TKjLNQPOh6Q0uK4djNZfRt46sqo",
+            authDomain: "sknchck-7d0ad.firebaseapp.com",
+            projectId: "sknchck-7d0ad",
+            storageBucket: "sknchck-7d0ad.appspot.com",
+            messagingSenderId: "1040576974936",
+            appId: "1:1040576974936:web:3a74d8ce986030e063fa2d",
+            measurementId: "G-6RGVXRT0V6"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Button Click Events
+        document.getElementById('skin-analysis').addEventListener('click', () => {
+            console.log("Skin Analysis button clicked.");
+            window.location.href = "analysis.html";
+        });
+
+        document.getElementById('promote-product').addEventListener('click', () => {
+            console.log("Promote Product button clicked.");
+            window.location.href = "promote.html";
+        });
+
+        // Language Selection
+        document.getElementById('language-select').addEventListener('change', () => {
+            const selectedLanguage = document.getElementById('language-select').value;
+            const skinAnalysisButton = document.getElementById('skin-analysis');
+            const promoteProductButton = document.getElementById('promote-product');
+
+            if (selectedLanguage === 'en') {
+                skinAnalysisButton.innerText = "Skin Analysis";
+                promoteProductButton.innerText = "Promote Your Product";
+            } else if (selectedLanguage === 'tr') {
+                skinAnalysisButton.innerText = "Cilt Analizi";
+                promoteProductButton.innerText = "Ürününü Tanıt";
+            }
+        });
+
+        // Toggle Dark Mode
+        document.getElementById('toggle-dark-mode').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        // Check Auth State
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                console.log("User is not signed in. Redirecting to index.html...");
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+
+</html>

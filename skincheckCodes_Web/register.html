@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skin Check - Register</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-section input,
+        .form-section select {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+            height: 40px;
+        }
+
+        .drag-drop-area {
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            border: 2px dashed #ccc;
+            border-radius: 50%;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drag-drop-area p {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: whitesmoke;
+            font-size: 14px;
+            margin: 0;
+            text-align: center;
+        }
+
+        .drag-drop-area img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .birth-date-section {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin: 10px auto;
+        }
+
+        .birth-date-section select {
+            width: 30%;
+        }
+
+        .password-container {
+            position: relative;
+            width: 90%;
+            margin: 10px auto;
+        }
+
+        .password-container input {
+            width: 100%;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 25px;
+            color: #666;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.11/firebase-storage-compat.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h2 id="register-title">Register</h2>
+
+        <!-- Sürükle Bırak Alanı -->
+        <div class="drag-drop-area" id="drag-drop-area">
+            <p id="drag-drop-text">Drag and Drop a Profile Picture or Click to Select</p>
+            <input type="file" id="profile-picture" accept="image/*" style="display: none;">
+            <img id="preview-image" alt="Profile Preview">
+        </div>
+
+        <div class="form-section">
+            <input type="text" id="first-name" placeholder="First Name">
+            <input type="text" id="last-name" placeholder="Last Name">
+            <select id="gender">
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <div class="birth-date-section">
+                <select id="birth-day">
+                    <option value="">Day</option>
+                </select>
+                <select id="birth-month">
+                    <option value="">Month</option>
+                </select>
+                <select id="birth-year">
+                    <option value="">Year</option>
+                </select>
+            </div>
+
+            <input type="email" id="register-email" placeholder="Email">
+            <div class="password-container">
+                <input type="password" id="register-password" placeholder="Password">
+                <span class="toggle-password" id="toggle-password">🐵</span>
+            </div>
+            <button id="create-account" class="btn">Create Account</button>
+            <button id="cancel-btn" class="btn" style="background-color: #f44336;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBe6Gj3TKjLNQPOh6Q0uK4djNZfRt46sqo",
+            authDomain: "sknchck-7d0ad.firebaseapp.com",
+            projectId: "sknchck-7d0ad",
+            storageBucket: "sknchck-7d0ad.appspot.com",
+            messagingSenderId: "1040576974936",
+            appId: "1:1040576974936:web:3a74d8ce986030e063fa2d",
+            measurementId: "G-6RGVXRT0V6"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        // Gün, Ay, Yıl için seçim elemanlarını doldur
+        document.addEventListener('DOMContentLoaded', () => {
+            const daySelect = document.getElementById('birth-day');
+            const monthSelect = document.getElementById('birth-month');
+            const yearSelect = document.getElementById('birth-year');
+
+            for (let day = 1; day <= 31; day++) {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day;
+                daySelect.appendChild(option);
+            }
+
+            const months = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index + 1;
+                option.textContent = month;
+                monthSelect.appendChild(option);
+            });
+
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear; year >= 1900; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+        });
+
+        // Şifre görünürlüğünü değiştir
+        document.getElementById('toggle-password').addEventListener('click', () => {
+            const passwordInput = document.getElementById('register-password');
+            const togglePassword = document.getElementById('toggle-password');
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                togglePassword.textContent = "🙈"; // Göz ikonunu değiştir
+            } else {
+                passwordInput.type = "password";
+                togglePassword.textContent = "🐵"; // Göz ikonunu değiştir
+            }
+        });
+
+        // Sürükle Bırak İşlemi
+        const dragDropArea = document.getElementById('drag-drop-area');
+        const profilePictureInput = document.getElementById('profile-picture');
+        const previewImage = document.getElementById('preview-image');
+        const dragDropText = document.getElementById('drag-drop-text');
+
+        dragDropArea.addEventListener('click', () => {
+            profilePictureInput.click();
+        });
+
+        dragDropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            dragDropArea.style.borderColor = "#666";
+        });
+
+        dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.style.borderColor = "#ccc";
+        });
+
+        dragDropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            dragDropArea.style.borderColor = "#ccc";
+
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                profilePictureInput.files = event.dataTransfer.files;
+                showPreview(file);
+            }
+        });
+
+        profilePictureInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                showPreview(file);
+            }
+        });
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                previewImage.src = event.target.result;
+                previewImage.style.display = "block";
+                dragDropText.style.display = "none";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Create Account
+        document.getElementById('create-account').addEventListener('click', async () => {
+            const firstName = document.getElementById('first-name').value.trim();
+            const lastName = document.getElementById('last-name').value.trim();
+            const gender = document.getElementById('gender').value;
+            const day = document.getElementById('birth-day').value;
+            const month = document.getElementById('birth-month').value;
+            const year = document.getElementById('birth-year').value;
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const profilePicture = profilePictureInput.files[0];
+
+            if (!firstName || !lastName || !gender || !day || !month || !year || !email || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            const birthDate = `${day}/${month}/${year}`;
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+
+                let profilePictureUrl = null;
+
+                if (profilePicture) {
+                    const storageRef = storage.ref(`profile_pictures/${user.uid}`);
+                    await storageRef.put(profilePicture);
+                    profilePictureUrl = await storageRef.getDownloadURL();
+                }
+
+                await db.collection('users').doc(user.uid).set({
+                    firstName,
+                    lastName,
+                    gender,
+                    birthDate,
+                    email,
+                    profilePictureUrl,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert(`Account created successfully for ${firstName} ${lastName}`);
+                window.location.href = "index.html";
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+
+</html>
