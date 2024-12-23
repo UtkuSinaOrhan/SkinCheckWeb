@@ -1,1 +1,1 @@
-"This is a skin checking application" 
+"This is a skin checking application on web" 
